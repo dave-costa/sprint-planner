@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { RoomsGateway } from './rooms.gateway';
-import { RoomsService } from './rooms.service';
+import { RoomsGateway } from '../rooms.gateway';
+import { RoomsService } from '../rooms.service';
 import { Server } from 'socket.io';
 
 describe('RoomsGateway', () => {

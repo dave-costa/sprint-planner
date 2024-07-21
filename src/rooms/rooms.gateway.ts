@@ -16,7 +16,9 @@ export class RoomsGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
     @SubscribeMessage('joinRoom')
     handleJoinRoom(client: Socket, payload: JoinRoomPayload): void {
 
-        const { roomName, email, username, sequence } = payload;
+        console.log('cliente tal madou tal dados', payload);
+
+        /* const { roomName, email, username, sequence } = payload;
         const room = roomName
             ? this.roomsService.joinRoom(roomName, email, username)
             : this.roomsService.createRoom(this.makeUniqueId(), email, username, sequence);
@@ -25,7 +27,7 @@ export class RoomsGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
             const roomId = roomName || room.master.room;
             client.join(roomId);
             this.server.to(roomId).emit('userJoined', { users: room.users, sequence: room.users[email].sequence });
-        }
+        } */
     }
 
     @SubscribeMessage('selectCard')
@@ -64,9 +66,5 @@ export class RoomsGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
 
     handleConnection(client: Socket, ..._args: any[]) {
         console.log(`Client connected: ${client.id}`);
-    }
-
-    private makeUniqueId(): string {
-        return Math.random().toString(36).substr(2, 9);
     }
 }
