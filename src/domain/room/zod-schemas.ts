@@ -12,4 +12,29 @@ export const createRoomSchema = z
     })
     .required();
 
-export type IPayloadSprintFromClient = z.infer<typeof createRoomSchema>;
+export const joinRoomSchema = z
+    .object({
+        roomCode: z.string(),
+        taskCode: z.string(),
+        email: z.string(),
+        name: z.string()
+    })
+    .required();
+
+
+export const mainClientSchema = z
+    .object({
+        roomCode: z.string(),
+        taskCode: z.string(),
+        email: z.string()
+    })
+    .required()
+    ;
+
+
+export const includeCardSchema = z
+    .object({
+        card: z.string(),
+    })
+    .required();
+

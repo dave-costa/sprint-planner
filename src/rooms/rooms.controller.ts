@@ -1,9 +1,15 @@
-import { Controller, Get, Param, NotFoundException, Post, Body, Res, HttpStatus, UsePipes } from '@nestjs/common';
+import { Controller, Get, Param, Post, Body, Res, HttpStatus, UsePipes } from '@nestjs/common';
 import { RoomsService } from './rooms.service';
-import { IPayloadSprintFromClient, createRoomSchema } from './schemas/room';
-import { makeRoomCycles } from './useCases/make-room-cyle';
+import { makeRoomCycles } from './cycles/make-room-cycle';
 import { Response } from 'express';
 import { ZodValidationPipe } from 'src/validators/payload-controller';
+import { addRoomCycles } from './cycles/add-room-cycle';
+import { deleteUserCycle } from './cycles/delete-user-cycle';
+import { selectCardCycle } from './cycles/select-card-cycle';
+import { revealCardsCycle } from './cycles/reveal-cards-cycle';
+import { resetTaskCycle } from './cycles/reset-task-cycle';
+import { createRoomSchema, includeCardSchema, joinRoomSchema, mainClientSchema } from 'src/domain/room/zod-schemas';
+import { IMainClientInfo, IPayloadSprintFromClient } from 'src/domain/room/data-from-client';
 
 @Controller('rooms')
 export class RoomsController {
@@ -20,28 +26,42 @@ export class RoomsController {
         return res.status(room.status).json(room.json);
     }
 
-
-
-
-    @Get('verify-room/:id')
-    verifyRoom(@Param('id') id: string) {
-        const room = this.roomsService.getRoom(id);
-        if (!room) {
-            throw new NotFoundException('Room does not exist');
-        }
-        return { msg: 'Room found' };
+    @Post('join-room')
+    @UsePipes(new ZodValidationPipe(joinRoomSchema))
+    joinRoom(@Body() body: IMainClientInfo & { name: string }, @Res() res: Response) {
+        const room = addRoomCycles(this.roomsService, body)
+        return res.status(room.status).json(room.json);
     }
 
-    @Get('show-users/:id')
-    showUsers(@Param('id') id: string) {
-        const room = this.roomsService.getRoom(id);
-        if (!room) {
-            throw new NotFoundException('Room does not exist');
-        }
-        return { room };
+    @Post('delete-user-in-room')
+    @UsePipes(new ZodValidationPipe(mainClientSchema))
+    deleteUser(@Body() body: IMainClientInfo, @Res() res: Response) {
+        const room = deleteUserCycle(this.roomsService, body)
+        return res.status(room.status).json(room.json);
     }
 
 
+    @Post('select-card-in-room')
+    @UsePipes(new ZodValidationPipe(mainClientSchema.merge(includeCardSchema)))
+    selectCard(@Body() body: IMainClientInfo & { card: string }, @Res() res: Response) {
+        const room = selectCardCycle(this.roomsService, body)
+        return res.status(room.status).json(room.json);
+
+    }
+
+    @Post('reveal-cards-in-task')
+    @UsePipes(new ZodValidationPipe(mainClientSchema))
+    revealCards(@Body() body: IMainClientInfo, @Res() res: Response) {
+        const room = revealCardsCycle(this.roomsService, body);
+        return res.status(room.status).json(room.json);
+    }
+
+    @Post('reset-task')
+    @UsePipes(new ZodValidationPipe(mainClientSchema))
+    resetTask(@Body() body: IMainClientInfo, @Res() res: Response) {
+        const room = resetTaskCycle(this.roomsService, body);
+        return res.status(room.status).json(room.json);
+    }
 
     // NÃO VAI PRA PROD
 

@@ -1,8 +1,44 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { RoomsService } from '../rooms.service';
+import { formatPayloadFromClient } from '../helpers/format-payload-from-client';
+import { IPayloadSprintFromClient } from 'src/domain/room/data-from-client';
 
-describe('RoomsService', () => {
+describe('O serviço de salas deve: ', () => {
     let service: RoomsService;
+    let mockMasterUser: IPayloadSprintFromClient = {
+        "name": "Sprint Planning Meeting",
+        "email": "dave@sprintplanner.com",
+        "duration": "1",
+        "estimated_points": 30,
+        "sequence": "fibonacciSequence",
+        "tasks": [
+            {
+                "name": "Task 1",
+                "description": "Description for Task 1"
+            },
+            {
+                "name": "Task 2",
+                "description": "Description for Task 2"
+            },
+            {
+                "name": "Task 3",
+                "description": "Description for Task 3"
+            }
+        ]
+    }
+    let mockMasterUnvited: any = {
+        "name": "Sprint Planning Meeting",
+        "email": "dave@sprintplanner.com",
+        "roomCode": "5c407fec-255d-4ae2-a454-3bc65281bb2e",
+        "taskCode": "449889d1-0344-4ad1-8229-682400a80bb9"
+    }
+
+    let mockInvitedUser = {
+        "name": "Sprint Planning Meeting",
+        "email": "aline@sprintplanner.com",
+        "roomCode": "5c407fec-255d-4ae2-a454-3bc65281bb2e",
+        "taskCode": "449889d1-0344-4ad1-8229-682400a80bb9"
+    }
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
@@ -12,62 +48,86 @@ describe('RoomsService', () => {
         service = module.get<RoomsService>(RoomsService);
     });
 
-    it('should be defined', () => {
+    it('- Criar o serviço bem definido', () => {
         expect(service).toBeDefined();
     });
 
-    it('should create a room', () => {
-        const room = service.createRoom('roomId', 'test@example.com', 'Test User', 'sequence');
-        expect(room).toBeDefined();
-        expect(room.users['test@example.com']).toBeDefined();
-    });
+    it('- Criar uma sala com 3 tarefas', () => {
+        const roomToCreate = formatPayloadFromClient(mockMasterUser);
+        const room = service.createRoom(roomToCreate);
+        expect(room.tasks.length).toBe(3);
+    })
 
-    it('should join a room', () => {
-        service.createRoom('roomId', 'test@example.com', 'Test User', 'sequence');
-        const room = service.joinRoom('roomId', 'test2@example.com', 'Test User 2');
-        expect(room).toBeDefined();
-        expect(room.users['test2@example.com']).toBeDefined();
-    });
+    it('- Criar o Mestre da sala e adicionar usuário convidado', () => {
+        const roomToCreate = formatPayloadFromClient(mockMasterUser);
+        const room = service.createRoom(roomToCreate);
+        mockMasterUnvited.roomCode = room.id
+        mockInvitedUser.roomCode = room.id
+        mockMasterUnvited.taskCode = room.tasks[0].id
+        mockInvitedUser.taskCode = room.tasks[0].id
 
-    it('should select a card', () => {
-        service.createRoom('roomId', 'test@example.com', 'Test User', 'sequence');
-        const users = service.selectCard('roomId', 'test@example.com', '5');
-        expect(users['test@example.com'].card).toBe('5');
-    });
+        const roomUpdated = service.addUserToTaskFromRoom(mockMasterUnvited);
+        const roomUptated2 = service.addUserToTaskFromRoom(mockInvitedUser);
 
-    it('should reveal cards', () => {
-        service.createRoom('roomId', 'test@example.com', 'Test User', 'sequence');
-        service.selectCard('roomId', 'test@example.com', '5');
-        const users = service.revealCards('roomId');
-        expect(users['test@example.com'].show).toBe(true);
-    });
+        expect(roomUptated2?.masterInfo?.email).toBe(roomUpdated?.masterInfo?.email);
+    })
+    it('- Deletar um usuário da sala', () => {
+        const roomToCreate = formatPayloadFromClient(mockMasterUser);
+        const room = service.createRoom(roomToCreate);
+        mockMasterUnvited.roomCode = room.id
+        mockMasterUnvited.taskCode = room.tasks[0].id
+        const roomUpdatedWithUser = service.addUserToTaskFromRoom(mockMasterUnvited);
+        expect(roomUpdatedWithUser?.tasks[0].usersInRoom.length).toBe(1);
+        const roomUpdated = service.deleteUserFromRoom(mockMasterUnvited);
+        expect(roomUpdated?.tasks[0].usersInRoom.length).toBe(0);
+    })
 
-    it('should reset room', () => {
-        service.createRoom('roomId', 'test@example.com', 'Test User', 'sequence');
-        service.selectCard('roomId', 'test@example.com', '5');
-        service.revealCards('roomId');
-        const users = service.resetRoom('roomId');
-        expect(users['test@example.com'].card).toBe(null);
-        expect(users['test@example.com'].show).toBe(false);
-    });
+    it('- Selecionar cartas', () => {
+        const roomToCreate = formatPayloadFromClient(mockMasterUser);
+        const room = service.createRoom(roomToCreate);
+        mockMasterUnvited.roomCode = room.id
+        mockMasterUnvited.taskCode = room.tasks[0].id
+        const roomUpdatedWithUser = service.addUserToTaskFromRoom(mockMasterUnvited);
+        expect(roomUpdatedWithUser?.tasks[0].usersInRoom.length).toBe(1);
+        mockMasterUnvited.card = "1"
+        const roomUpdated = service.selectCardFromRoom(mockMasterUnvited);
+        expect(roomUpdated?.tasks[0].usersInRoom[0].card).toBe("1");
+    })
 
-    it('should disconnect a user', () => {
-        service.createRoom('roomId', 'test@example.com', 'Test User', 'sequence');
-        service.joinRoom('roomId', 'test2@example.com', 'Test User 2');
-        const { username, users } = service.disconnectUser('roomId', 'test2@example.com');
-        expect(username).toBe('Test User 2');
-        expect(users['test2@example.com']).toBeUndefined();
-    });
+    it('- Revelar cartas', () => {
+        const roomToCreate = formatPayloadFromClient(mockMasterUser);
+        const room = service.createRoom(roomToCreate);
+        mockMasterUnvited.roomCode = room.id
+        mockMasterUnvited.taskCode = room.tasks[0].id
+        const roomUpdatedWithUser = service.addUserToTaskFromRoom(mockMasterUnvited);
+        expect(roomUpdatedWithUser?.tasks[0].usersInRoom.length).toBe(1);
+        mockMasterUnvited.card = "1"
+        service.selectCardFromRoom(mockMasterUnvited);
+        const roomUptated2 = service.revealCardsFromRoom(mockMasterUnvited);
+        expect(roomUptated2?.tasks[0].usersInRoom[0].show).toBe(true);
+    })
+    it('- Resetar tarefa', () => {
+        const roomToCreate = formatPayloadFromClient(mockMasterUser);
+        const room = service.createRoom(roomToCreate);
+        mockMasterUnvited.roomCode = room.id
+        mockMasterUnvited.taskCode = room.tasks[0].id
+        const roomUpdatedWithUser = service.addUserToTaskFromRoom(mockMasterUnvited);
+        expect(roomUpdatedWithUser?.tasks[0].usersInRoom.length).toBe(1);
+        mockMasterUnvited.card = "1"
+        service.selectCardFromRoom(mockMasterUnvited);
+        service.revealCardsFromRoom(mockMasterUnvited);
+        const roomUpdated = service.resetTask(mockMasterUnvited);
+        const updatedTask = roomUpdated.tasks[0]
+        expect(updatedTask?.isVoted).toBe(false);
+        expect(updatedTask?.pointsVoted).toBe(0);
+        expect(updatedTask?.maxPontuation).toBeNull();
+        expect(updatedTask?.minPontuation).toBeNull();
 
-    it('should get a room', () => {
-        service.createRoom('roomId', 'test@example.com', 'Test User', 'sequence');
-        const room = service.getRoom('roomId');
-        expect(room).toBeDefined();
-    });
+        updatedTask?.usersInRoom.forEach(u => {
+            expect(u.show).toBe(false);
+            expect(u.card).toBeNull();
+        });
 
-    it('should get users in room', () => {
-        service.createRoom('roomId', 'test@example.com', 'Test User', 'sequence');
-        const users = service.getUsersInRoom('roomId');
-        expect(users['test@example.com']).toBeDefined();
-    });
+    })
+
 });

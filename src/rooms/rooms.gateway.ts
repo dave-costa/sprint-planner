@@ -1,7 +1,12 @@
 import { WebSocketGateway, WebSocketServer, SubscribeMessage, OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { RoomsService } from './rooms.service';
-import { DisconnectUserPayload, JoinRoomPayload, SelectCardPayload } from './interfaces';
+import { addRoomCycles } from './cycles/add-room-cycle';
+import { deleteUserCycle } from './cycles/delete-user-cycle';
+import { selectCardCycle } from './cycles/select-card-cycle';
+import { revealCardsCycle } from './cycles/reveal-cards-cycle';
+import { resetTaskCycle } from './cycles/reset-task-cycle';
+import { IMainClientInfo } from 'src/domain/room/data-from-client';
 
 @WebSocketGateway({
     cors: {
@@ -14,46 +19,74 @@ export class RoomsGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
     constructor(private readonly roomsService: RoomsService) { }
 
     @SubscribeMessage('joinRoom')
-    handleJoinRoom(client: Socket, payload: JoinRoomPayload): void {
-
-        console.log('cliente tal madou tal dados', payload);
-
-        /* const { roomName, email, username, sequence } = payload;
-        const room = roomName
-            ? this.roomsService.joinRoom(roomName, email, username)
-            : this.roomsService.createRoom(this.makeUniqueId(), email, username, sequence);
-
-        if (room) {
-            const roomId = roomName || room.master.room;
-            client.join(roomId);
-            this.server.to(roomId).emit('userJoined', { users: room.users, sequence: room.users[email].sequence });
-        } */
-    }
-
-    @SubscribeMessage('selectCard')
-    handleSelectCard(_client: Socket, payload: SelectCardPayload): void {
-        const { roomName, email, card } = payload;
-        const users = this.roomsService.selectCard(roomName, email, card);
-        this.server.to(roomName).emit('cardSelected', users);
-    }
-
-    @SubscribeMessage('revealCards')
-    handleRevealCards(_client: Socket, roomName: string): void {
-        const users = this.roomsService.revealCards(roomName);
-        this.server.to(roomName).emit('cardsRevealed', users);
-    }
-
-    @SubscribeMessage('resetRoom')
-    handleResetRoom(_client: Socket, roomName: string): void {
-        const users = this.roomsService.resetRoom(roomName);
-        this.server.to(roomName).emit('roomReset', users);
+    handleJoinRoom(client: Socket, payload: IMainClientInfo & { name: string }): void {
+        const roomUpdated = addRoomCycles(this.roomsService, payload);
+        if (roomUpdated.status == 200) {
+            const socket_room = `${payload.roomCode}-${payload.taskCode}`;
+            client.join(socket_room);
+            this.server.to(socket_room).emit('userJoined', {
+                data: roomUpdated.json
+            })
+        } else {
+            client.emit('error', roomUpdated.json);
+        }
     }
 
     @SubscribeMessage('disconnectUser')
-    handleDisconnectUser(_client: Socket, payload: DisconnectUserPayload): void {
-        const { roomName, email } = payload;
-        const { username, users } = this.roomsService.disconnectUser(roomName, email);
-        this.server.to(roomName).emit('userLeft', { username, users });
+    handleDisconnectUser(client: Socket, payload: IMainClientInfo): void {
+
+        const roomUpdated = deleteUserCycle(this.roomsService, payload);
+        const socket_room = `${payload.roomCode}-${payload.taskCode}`;
+
+        if (roomUpdated.status == 200) {
+            this.server.to(socket_room).emit('userLeft', {
+                data: roomUpdated.json
+            })
+        } else {
+            client.emit('error', roomUpdated.json);
+        }
+    }
+
+    @SubscribeMessage('selectCard')
+    handleSelectCard(client: Socket, payload: IMainClientInfo & { card: string }): void {
+
+        const roomUpdated = selectCardCycle(this.roomsService, payload);
+        const socket_room = `${payload.roomCode}-${payload.taskCode}`;
+
+        if (roomUpdated.status == 200) {
+            this.server.to(socket_room).emit('cardSelected', {
+                data: roomUpdated.json
+            })
+        } else {
+            client.emit('error', roomUpdated.json);
+        }
+    }
+    @SubscribeMessage('revealCards')
+    handleRevealCards(client: Socket, payload: IMainClientInfo): void {
+        const roomUpdated = revealCardsCycle(this.roomsService, payload);
+        const socket_room = `${payload.roomCode}-${payload.taskCode}`;
+
+        if (roomUpdated.status == 200) {
+            this.server.to(socket_room).emit('cardsRevealed', {
+                data: roomUpdated.json
+            })
+        } else {
+            client.emit('error', roomUpdated.json);
+        }
+    }
+
+    @SubscribeMessage('resetRoom')
+    handleResetRoom(client: Socket, payload: IMainClientInfo): void {
+        const roomUpdated = resetTaskCycle(this.roomsService, payload);
+        const socket_room = `${payload.roomCode}-${payload.taskCode}`;
+
+        if (roomUpdated.status == 200) {
+            this.server.to(socket_room).emit('roomReset', {
+                data: roomUpdated.json
+            })
+        } else {
+            client.emit('error', roomUpdated.json);
+        }
     }
 
     afterInit(_server: Server) {

@@ -1,7 +1,7 @@
+import { IPayloadSprintFromClient } from "src/domain/room/data-from-client";
 import { formatPayloadFromClient } from "../helpers/format-payload-from-client";
 import { RoomsService } from "../rooms.service";
 import { HttpStatus } from '@nestjs/common';
-import { IPayloadSprintFromClient } from "../schemas/room";
 export const makeRoomCycles = (roomsService: RoomsService, payloadSprint: IPayloadSprintFromClient): { status: number, json: any } => {
     try {
         const roomToCreate = formatPayloadFromClient(payloadSprint);

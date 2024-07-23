@@ -1,6 +1,10 @@
-import { IPayloadSprintFromClient } from "../schemas/room";
+import { IPayloadSprintFromClient } from "src/domain/room/data-from-client";
 import { v4 as uuid } from "uuid";
 
+interface RelevantUserPoints {
+    email: string,
+    points: number
+}
 
 export interface IFormattedPayloadClientToUseInSocket {
     id: string;
@@ -9,14 +13,19 @@ export interface IFormattedPayloadClientToUseInSocket {
     duration: number;
     estimated_points: number;
     sequence: string;
-    masterInfo: any;
+    masterInfo: {
+        email: string
+        room: string
+        sequence: string
+    } | null;
     tasks: {
+        isVoted: boolean;
         id: string;
         name: string;
         description: string;
         pointsVoted: number;
-        maxPontuation: number;
-        minPontuation: number;
+        maxPontuation: RelevantUserPoints | null;
+        minPontuation: RelevantUserPoints | null;
         usersInRoom: {
             email: string,
             isMaster?: {
@@ -46,9 +55,10 @@ export const formatPayloadFromClient = (payloadSprint: IPayloadSprintFromClient)
                 name: task.name,
                 description: task.description,
                 pointsVoted: 0,
+                isVoted: false,
                 usersInRoom: [],
-                maxPontuation: 0,
-                minPontuation: 0,
+                maxPontuation: null,
+                minPontuation: null,
                 activeUsers: 0
             }
         })
