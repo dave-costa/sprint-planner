@@ -10,6 +10,7 @@ import { revealCardsCycle } from './cycles/reveal-cards-cycle';
 import { resetTaskCycle } from './cycles/reset-task-cycle';
 import { createRoomSchema, includeCardSchema, joinRoomSchema, mainClientSchema } from 'src/domain/room/zod-schemas';
 import { IMainClientInfo, IPayloadSprintFromClient } from 'src/domain/room/data-from-client';
+import { verifyLimitCycle } from './cycles/verify-limit-cycle';
 
 @Controller('rooms')
 export class RoomsController {
@@ -63,24 +64,18 @@ export class RoomsController {
         return res.status(room.status).json(room.json);
     }
 
+    @Post('verify-room-limit')
+    @UsePipes(new ZodValidationPipe(mainClientSchema))
+    async verifyRoomLimit(@Body() body: IMainClientInfo, @Res() res: Response) {
+        const room = await verifyLimitCycle(this.roomsService, body);
+        return res.status(room.status).json(room.json);
+    }
+
     // NÃO VAI PRA PROD
 
     @Get('see-rooms/:code')
     seeRooms(@Param('code') code: string, @Res() res: Response) {
         if (!code || code != '4444') return res.status(HttpStatus.BAD_REQUEST).json({ error: 'ROTA PRIVADA' });
         return res.status(HttpStatus.OK).json(this.roomsService.seeRooms());
-    }
-
-    @Post('add-user-rooms/:code')
-    addUserRooms(@Param('code') code: string, @Res() res: Response, @Body() body: {
-        roomCode: string,
-        taskCode: string,
-        email: string,
-        sequenceName: string,
-        name: string
-
-    }) {
-        if (!code || code != '4444') return res.status(HttpStatus.BAD_REQUEST).json({ error: 'ROTA PRIVADA' });
-
     }
 }

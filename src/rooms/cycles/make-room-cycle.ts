@@ -10,11 +10,9 @@ export const makeRoomCycles = (roomsService: RoomsService, payloadSprint: IPaylo
             json: roomsService.createRoom(roomToCreate)
         };
     } catch (error) {
-        console.log(error);
-
         return {
             status: HttpStatus.BAD_REQUEST,
-            json: { error: "Erro inesperado, já estamos verificando. Tente novamente mais tarde" }
+            json: error.message
         }
     }
 

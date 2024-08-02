@@ -39,10 +39,11 @@ CREATE TABLE "Task" (
 CREATE TABLE "Participant" (
     "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
+    "phone" TEXT,
     "points" INTEGER NOT NULL,
-    "taskId" TEXT NOT NULL,
+    "tasksIds" TEXT NOT NULL,
+    "tasksNames" TEXT NOT NULL,
     "sprintId" TEXT NOT NULL,
-    "userId" TEXT,
 
     CONSTRAINT "Participant_pkey" PRIMARY KEY ("id")
 );
@@ -63,13 +64,7 @@ ALTER TABLE "Sprint" ADD CONSTRAINT "Sprint_ownerID_fkey" FOREIGN KEY ("ownerID"
 ALTER TABLE "Task" ADD CONSTRAINT "Task_sprintId_fkey" FOREIGN KEY ("sprintId") REFERENCES "Sprint"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Participant" ADD CONSTRAINT "Participant_taskId_fkey" FOREIGN KEY ("taskId") REFERENCES "Task"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "Participant" ADD CONSTRAINT "Participant_sprintId_fkey" FOREIGN KEY ("sprintId") REFERENCES "Sprint"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Participant" ADD CONSTRAINT "Participant_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Report" ADD CONSTRAINT "Report_taskId_fkey" FOREIGN KEY ("taskId") REFERENCES "Task"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

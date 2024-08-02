@@ -1,10 +1,12 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { IFormattedRoom, IRoom, IUserInRoom } from 'src/domain/room';
 import { IMainClientInfo } from 'src/domain/room/data-from-client';
-
+import { PrismaService } from '../../prisma/prisma/prisma.service';
+import { ERRORS_ROOM_SERVICE } from './constants/errors';
 @Injectable()
 export class RoomsService {
     private rooms: IRoom = {};
+
     private sequences = {
         fibonacciSequence: ['1', '2', '3', '5', '8', '13', '21', '34', '55', '89', '144'],
         tShirtSizesSequence: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
@@ -19,6 +21,8 @@ export class RoomsService {
         '0.5': 0.5, '20': 20, '40': 40, '100': 100,
         '2h': 1, '4h': 2, '6h': 3, '8h': 5, '12h': 8, '24h': 13, '1sem': 21, '2sem': 34, '3sem': 55, '4sem': 89
     };
+    constructor(private prisma: PrismaService) { }
+
     seeRooms() {
         return this.rooms
     }
@@ -31,14 +35,14 @@ export class RoomsService {
     }
 
     addUserToTaskFromRoom(user: IMainClientInfo & { name: string }) {
-        if (!this.rooms[user.roomCode] || !this.rooms[user.roomCode].tasks.some((task) => task.id === user.taskCode)) {
-            throw new NotFoundException('Room or task not found');
+        if (!this.rooms[user?.roomCode]) {
+            throw new NotFoundException(ERRORS_ROOM_SERVICE.NOT_FOUND_ROOM);
         }
-
+        if (!this.rooms[user.roomCode].tasks.some((task) => task.id === user.taskCode)) {
+            throw new NotFoundException(ERRORS_ROOM_SERVICE.NOT_FOUND_TASK);
+        }
         const isMaster = this.rooms[user.roomCode].tasks.every((task) => task.usersInRoom.length === 0);
-
         let userToRoom = {};
-
         if (isMaster) {
             this.rooms[user.roomCode].masterInfo = {
                 email: user.email,
@@ -70,7 +74,6 @@ export class RoomsService {
                     sequence: this.rooms[user.roomCode].sequence
                 };
             }
-
             userToRoom = {
                 email: user.email,
                 isMaster: null,
@@ -81,14 +84,11 @@ export class RoomsService {
                 sequenceName: this.rooms[user.roomCode].sequence
             };
         }
-
         this.rooms[user.roomCode].tasks.forEach((task) => {
             task.usersInRoom = task.usersInRoom.filter((u) => u.email !== user.email);
         });
-
         const taskIndex = this.rooms[user.roomCode].tasks.findIndex((task) => task.id === user.taskCode);
         this.rooms[user.roomCode].tasks[taskIndex].usersInRoom.push(userToRoom as IUserInRoom);
-
         return this.rooms[user.roomCode];
     }
     deleteUserFromRoom(user: IMainClientInfo) {
@@ -202,5 +202,33 @@ export class RoomsService {
             u.card = null
         });
         return this.rooms[user.roomCode]
+    }
+
+    async verifyLimitFromRoom(user: IMainClientInfo) {
+
+        if (!this.rooms[user.roomCode] || !this.rooms[user.roomCode].tasks.some((task) => task.id === user.taskCode)) {
+            throw new NotFoundException('Sala ou tarefa não encontrada');
+        }
+        const masterEmail = this.rooms[user.roomCode].masterInfo?.email
+        const userInDatabase = await this.prisma.user.findFirst({
+            where: {
+                email: masterEmail
+            }
+        })
+        if (!userInDatabase) {
+            throw new NotFoundException('Usário criador não cadastrado');
+        }
+        const limitOfUser = userInDatabase.maxUsersInPlan
+        let usersInSprintOnline = 0
+        this.rooms[user.roomCode].tasks.forEach((task) => {
+            usersInSprintOnline += task.usersInRoom.length
+        })
+        if (usersInSprintOnline >= limitOfUser) {
+            throw new ForbiddenException('Limite da sala atingido');
+        }
+
+        return "usuario permitido"
+
+
     }
 }

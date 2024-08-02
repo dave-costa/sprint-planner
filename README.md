@@ -1,73 +1,64 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+# Documentação do Backend - Projeto Sprint Planner
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Visão Geral
 
-## Description
+Este projeto é um **Sprint Planner** que combina as funcionalidades de um gerenciador de atividades com Planning Poker, facilitando o planejamento de sprints e a estimativa colaborativa de tarefas. Utilizando o histórico das atividades e das estimativas, o sistema recomenda as pessoas mais adequadas para determinadas tarefas, otimizando a alocação de recursos e melhorando a eficiência do planejamento.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+O backend do projeto é desenvolvido utilizando o framework **NestJS**, que permite uma arquitetura modular e organizada. A seguir, detalhamos a estrutura e os principais componentes do backend.
 
-## Installation
+## Estrutura do Projeto
 
-```bash
-$ pnpm install
-```
+A estrutura do projeto está dividida em diferentes módulos e cada módulo contém rotinas específicas chamadas **cicles**. Abaixo está a descrição dos principais módulos e suas respectivas funções:
 
-## Running the app
+### Diretório `src`
 
-```bash
-# development
-$ pnpm run start
+#### 1. `auth`
+- **Descrição:** Módulo responsável pela autenticação de usuários no sistema.
 
-# watch mode
-$ pnpm run start:dev
+#### 2. `domain`
+- **Descrição:** Este módulo centraliza as regras de negócio do projeto, podendo incluir lógica de aplicação que não está diretamente atrelada a um módulo específico.
 
-# production mode
-$ pnpm run start:prod
-```
+#### 3. `periodic-tasks`
+- **Descrição:** Módulo responsável por tarefas periódicas que o sistema precisa executar. Pode incluir tarefas como limpeza de dados antigos, envio de notificações, etc.
 
-## Test
+#### 4. `rooms`
+- **Descrição:** Gerencia as "salas" do Planning Poker e do Sprint Planner.
+  - **Subdiretório `cycles`:** Contém os diferentes ciclos que ocorrem dentro das salas, como:
+    - `add-room-cycle.ts`: Lógica para adicionar uma nova sala.
+    - `delete-user-cycle.ts`: Lógica para remover um usuário de uma sala.
+    - `make-room-cycle.ts`: Lógica para criar uma sala.
+    - `reset-task-cycle.ts`: Lógica para resetar uma tarefa na sala.
+    - `reveal-cards-cycle.ts`: Lógica para revelar as cartas no Planning Poker.
+    - `select-card-cycle.ts`: Lógica para selecionar uma carta no Planning Poker.
+    - `verify-limit-cycle.ts`: Lógica para verificar os limites das salas ou tarefas.
 
-```bash
-# unit tests
-$ pnpm run test
+  - **Subdiretório `helpers`:** Contém funções auxiliares utilizadas no módulo `rooms`.
 
-# e2e tests
-$ pnpm run test:e2e
+  - **Arquivos principais:**
+    - `rooms.controller.ts`: Controlador responsável por lidar com as requisições relacionadas às salas.
+    - `rooms.gateway.ts`: Gateway para comunicação em tempo real (provavelmente utilizando WebSockets).
+    - `rooms.module.ts`: Módulo que configura a importação e injeção de dependências relacionadas às salas.
+    - `rooms.service.ts`: Serviço que contém a lógica de negócio para as salas.
 
-# test coverage
-$ pnpm run test:cov
-```
+#### 5. `sprint`
+- **Descrição:** Módulo dedicado à gestão dos sprints, onde as atividades são planejadas e monitoradas.
 
-## Support
+#### 6. `user`
+- **Descrição:** Módulo que gerencia os usuários da aplicação.
+  - **Subdiretório `validators`:** Contém validadores para assegurar que os dados dos usuários estejam corretos ao serem inseridos ou manipulados no sistema.
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+### Outros Arquivos e Diretórios Importantes
 
-## Stay in touch
+- `app.module.ts`: Módulo principal que faz a orquestração de todos os outros módulos do NestJS.
+- `.env`: Arquivo de configuração de variáveis de ambiente.
+- `tsconfig.json`: Arquivo de configuração do TypeScript para o projeto.
 
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+## Considerações Finais
 
-## License
+Este projeto é altamente modular, o que facilita a manutenção e a escalabilidade do código. Cada módulo é responsável por uma parte específica do sistema, permitindo que o desenvolvimento seja organizado e facilmente compreensível.
 
-Nest is [MIT licensed](LICENSE).
+O uso de **cicles** dentro de cada módulo é uma maneira inteligente de encapsular a lógica de cada ciclo de vida de uma sala ou sprint, garantindo que cada tarefa seja realizada de forma consistente e previsível.
+
+Esta documentação fornece uma visão geral da estrutura do backend e pode ser expandida conforme o projeto evolui, adicionando detalhes sobre cada ciclo, controlador e serviço.
+

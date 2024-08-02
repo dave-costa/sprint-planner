@@ -8,14 +8,13 @@ datasource db {
 }
 
 model User {
-  id             String        @id @default(uuid())
+  id             String   @id @default(uuid())
   name           String
   email          String
   password       String
   paidPlan       Boolean
   maxUsersInPlan Int
-  sprints        Sprint[]      @relation("OwnerSprints")
-  participants   Participant[]
+  sprints        Sprint[] @relation("OwnerSprints")
 }
 
 model Sprint {
@@ -32,27 +31,25 @@ model Sprint {
 }
 
 model Task {
-  id           String        @id @default(uuid())
-  name         String
-  voted        Boolean // O status
-  description  String?
-  pointsVoted  Int?
-  sprintId     String
-  sprint       Sprint        @relation(fields: [sprintId], references: [id])
-  participants Participant[]
-  reports      Report[]
+  id          String   @id @default(uuid())
+  name        String
+  voted       Boolean // O status
+  description String?
+  pointsVoted Int?
+  sprintId    String
+  sprint      Sprint   @relation(fields: [sprintId], references: [id])
+  reports     Report[]
 }
 
 model Participant {
-  id       String  @id @default(uuid())
-  email    String
-  points   Int
-  taskId   String
-  sprintId String
-  task     Task    @relation(fields: [taskId], references: [id])
-  sprint   Sprint  @relation(fields: [sprintId], references: [id])
-  User     User?   @relation(fields: [userId], references: [id])
-  userId   String?
+  id         String  @id @default(uuid())
+  email      String
+  phone      String?
+  points     Int
+  tasksIds   String
+  tasksNames String
+  sprintId   String
+  sprint     Sprint  @relation(fields: [sprintId], references: [id])
 }
 
 model Report {

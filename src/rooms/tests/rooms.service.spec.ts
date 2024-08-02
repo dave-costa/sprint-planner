@@ -2,7 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { RoomsService } from '../rooms.service';
 import { formatPayloadFromClient } from '../helpers/format-payload-from-client';
 import { IPayloadSprintFromClient } from 'src/domain/room/data-from-client';
-
+import { PrismaClient } from '@prisma/client';
+import { PrismaModule } from '../../../prisma/prisma/prisma.module';
 describe('O serviço de salas deve: ', () => {
     let service: RoomsService;
     let mockMasterUser: IPayloadSprintFromClient = {
@@ -32,6 +33,7 @@ describe('O serviço de salas deve: ', () => {
         "roomCode": "5c407fec-255d-4ae2-a454-3bc65281bb2e",
         "taskCode": "449889d1-0344-4ad1-8229-682400a80bb9"
     }
+    let prisma: PrismaClient;
 
     let mockInvitedUser = {
         "name": "Sprint Planning Meeting",
@@ -39,9 +41,28 @@ describe('O serviço de salas deve: ', () => {
         "roomCode": "5c407fec-255d-4ae2-a454-3bc65281bb2e",
         "taskCode": "449889d1-0344-4ad1-8229-682400a80bb9"
     }
+    beforeAll(async () => {
+        prisma = new PrismaClient({
+            datasources: {
+                db: {
+                    url: 'postgresql://dave-costa:eq8mnk9tvxHg@ep-fancy-sun-a5u0qciv-pooler.us-east-2.aws.neon.tech/planner?sslmode=require',
+                },
+            },
+        });
+        await prisma.$connect();
+    });
+    afterAll(async () => {
+        await prisma.$disconnect();
+    });
+
+    /* afterEach(async () => {
+        // Limpar dados de teste após cada execução de teste
+        await prisma.user.deleteMany();
+    }); */
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
+            imports: [PrismaModule],
             providers: [RoomsService],
         }).compile();
 
